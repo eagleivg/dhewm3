@@ -62,8 +62,10 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_PROJECT_T, din->lightProjection[1].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_PROJECT_Q, din->lightProjection[2].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_FALLOFF_S, din->lightProjection[3].ToFloatPtr() );
+#if 0 // for bump mapping
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_S, din->bumpMatrix[0].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_T, din->bumpMatrix[1].ToFloatPtr() );
+#endif
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DIFFUSE_MATRIX_S, din->diffuseMatrix[0].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DIFFUSE_MATRIX_T, din->diffuseMatrix[1].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_SPECULAR_MATRIX_S, din->specularMatrix[0].ToFloatPtr() );
@@ -100,9 +102,9 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 
 	// set the textures
 
-	// texture 1 will be the per-surface bump map
+	// texture 1 will be the per-surface displacement map
 	GL_SelectTextureNoClient( 1 );
-	din->bumpImage->Bind();
+	din->displacementImage->Bind();
 
 	// texture 2 will be the light falloff texture
 	GL_SelectTextureNoClient( 2 );
@@ -146,10 +148,18 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	} else {
 		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
 		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
+		if ( r_useTesselation.GetBool() ) {
+			qglBindProgramARB( GL_TESS_EVALUATION_SHADER, VPROG_DISPLACEMENT_ENVIRONMENT );
+			qglBindProgramARB( GL_TESS_CONTROL_SHADER, FPROG_DISPLACEMENT_ENVIRONMENT );
+		}
 	}
 
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
+	if ( r_useTesselation.GetBool() ) {
+		qglEnable( GL_TESS_CONTROL_SHADER );
+		qglEnable( GL_TESS_EVALUATION_SHADER );
+	}
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArrayARB( 8 );
@@ -222,6 +232,10 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	qglDisable(GL_VERTEX_PROGRAM_ARB);
 	qglDisable(GL_FRAGMENT_PROGRAM_ARB);
+	if ( r_useTesselation.GetBool() ) {
+		qglDisable( GL_TESS_CONTROL_SHADER );
+		qglDisable( GL_TESS_EVALUATION_SHADER );
+	}
 }
 
 
@@ -335,6 +349,8 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },
+	{ GL_TESS_EVALUATION_SHADER, VPROG_DISPLACEMENT_ENVIRONMENT, "tessEval.tes" },
+	{ GL_TESS_CONTROL_SHADER, FPROG_DISPLACEMENT_ENVIRONMENT, "tessControl.tcs" },
 
 	// additional programs can be dynamically specified in materials
 };
@@ -397,11 +413,24 @@ void R_LoadARBProgram( int progIndex ) {
 		}
 		start = strstr( buffer, "!!ARBfp" );
 	}
+
+	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER ) {
+		if ( !glConfig.tesselationAvailable ) {
+			common->Printf( ": GL_ARB_tessellation_shader not available\n" );
+			return;
+		}
+		start = buffer;
+	}
+
 	if ( !start ) {
 		common->Printf( ": !!ARB not found\n" );
 		return;
 	}
-	end = strstr( start, "END" );
+
+	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER ) {
+		end = strchr( start, '\0' ); // this is UGLY!!! TODO rewrite this
+	} else
+		end = strstr( start, "END" );
 
 	if ( !end ) {
 		common->Printf( ": END not found\n" );

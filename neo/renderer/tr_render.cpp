@@ -653,7 +653,7 @@ RB_SubmittInteraction
 =================
 */
 static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteraction)(const drawInteraction_t *) ) {
-	if ( !din->bumpImage ) {
+	if ( !din->displacementImage ) {
 		return;
 	}
 
@@ -663,8 +663,8 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 	if ( !din->specularImage || r_skipSpecular.GetBool() || din->ambientLight ) {
 		din->specularImage = globalImages->blackImage;
 	}
-	if ( !din->bumpImage || r_skipBump.GetBool() ) {
-		din->bumpImage = globalImages->flatNormalMap;
+	if ( !din->displacementImage || r_skipDisplacement.GetBool() ) {
+		din->displacementImage = globalImages->flatNormalMap;
 	}
 
 	// if we wouldn't draw anything, don't call the Draw function
@@ -755,7 +755,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 			RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), backEnd.lightTextureMatrix );
 		}
 
-		inter.bumpImage = NULL;
+		inter.displacementImage = NULL;
 		inter.specularImage = NULL;
 		inter.diffuseImage = NULL;
 		inter.diffuseColor[0] = inter.diffuseColor[1] = inter.diffuseColor[2] = inter.diffuseColor[3] = 0;
@@ -788,7 +788,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 					RB_SubmittInteraction( &inter, DrawInteraction );
 					inter.diffuseImage = NULL;
 					inter.specularImage = NULL;
-					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
+					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.displacementImage, inter.bumpMatrix, NULL );
 					break;
 				}
 				case SL_DIFFUSE: {

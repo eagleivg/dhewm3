@@ -570,6 +570,11 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;
+	case BE_VULCAN:
+		common->Printf( "using Vulcan renderSystem\n" );
+		backEndRendererHasVertexPrograms = true;
+		backEndRendererMaxLight = 999;
+		break;
 	default:
 		common->FatalError( "SetbackEndRenderer: bad back end" );
 	}

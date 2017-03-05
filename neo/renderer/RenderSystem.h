@@ -78,6 +78,7 @@ typedef struct glconfig_s {
 	bool				twoSidedStencilAvailable;
 	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;
+	bool				tesselationAvailable;
 
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 

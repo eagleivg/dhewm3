@@ -440,7 +440,7 @@ typedef struct {
 
 	idImage *			lightImage;
 	idImage *			lightFalloffImage;
-	idImage *			bumpImage;
+	idImage *			displacementImage;
 	idImage *			diffuseImage;
 	idImage *			specularImage;
 
@@ -673,6 +673,7 @@ const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for gu
 
 typedef enum {
 	BE_ARB2,
+	BE_VULCAN,
 	BE_BAD
 } backEndName_t;
 
@@ -868,7 +869,8 @@ extern idCVar r_useVertexBuffers;		// if 0, don't use ARB_vertex_buffer_object f
 extern idCVar r_useIndexBuffers;		// if 0, don't use ARB_vertex_buffer_object for indexes
 extern idCVar r_useEntityCallbacks;		// if 0, issue the callback immediately at update time, rather than defering
 extern idCVar r_lightAllBackFaces;		// light all the back faces, even when they would be shadowed
-extern idCVar r_useDepthBoundsTest;     // use depth bounds test to reduce shadow fill
+extern idCVar r_useDepthBoundsTest;		// use depth bounds test to reduce shadow fill
+extern idCVar r_useTesselation;			// use tesselation
 
 extern idCVar r_skipPostProcess;		// skip all post-process renderings
 extern idCVar r_skipSuppress;			// ignore the per-view suppressions
@@ -890,7 +892,7 @@ extern idCVar r_skipUpdates;			// 1 = don't accept any entity or light updates, 
 extern idCVar r_skipDeforms;			// leave all deform materials in their original state
 extern idCVar r_skipDynamicTextures;	// don't dynamically create textures
 extern idCVar r_skipLightScale;			// don't do any post-interaction light scaling, makes things dim on low-dynamic range cards
-extern idCVar r_skipBump;				// uses a flat surface instead of the bump map
+extern idCVar r_skipDisplacement;		// uses a flat surface instead of the displacement map
 extern idCVar r_skipSpecular;			// use black for specular
 extern idCVar r_skipDiffuse;			// use black for diffuse
 extern idCVar r_skipOverlays;			// skip overlay surfaces
@@ -1296,6 +1298,8 @@ typedef enum {
 	FPROG_AMBIENT,
 	VPROG_GLASSWARP,
 	FPROG_GLASSWARP,
+	VPROG_DISPLACEMENT_ENVIRONMENT,
+	FPROG_DISPLACEMENT_ENVIRONMENT,
 	PROG_USER
 } program_t;
 
