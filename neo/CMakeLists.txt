@@ -143,6 +143,7 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	add_compile_options(-pipe)
 	add_compile_options(-Wall)
+	add_compile_options(-msse4)
 
 	if(NOT CMAKE_CROSSCOMPILING AND ONATIVE)
 		add_compile_options(-march=native)
