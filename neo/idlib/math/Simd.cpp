@@ -34,6 +34,8 @@ If you have questions concerning this license or the applicable additional terms
 #include <mach/mach_time.h>
 #endif
 
+#include <sys/time.h>
+#include <sys/resource.h>
 #include "sys/platform.h"
 #include "idlib/geometry/DrawVert.h"
 #include "idlib/geometry/JointTransform.h"
@@ -147,7 +149,6 @@ void idSIMD::Shutdown( void ) {
 
 idSIMDProcessor *p_simd;
 idSIMDProcessor *p_generic;
-int baseClocks = 0;
 
 #if defined(_MSC_VER) && defined(_M_IX86)
 
@@ -189,13 +190,21 @@ double ticksPerNanosecond;
 
 #else
 
-#define TIME_TYPE int
+#define TIME_TYPE long int
+
+TIME_TYPE baseClocks = 0;
+
+TIME_TYPE mach_absolute_time(void) {
+	struct timespec tv;
+	clock_gettime(CLOCK_MONOTONIC, &tv);
+	return (TIME_TYPE) ((tv.tv_sec * 1000 * 1000 * 1000) + tv.tv_nsec);
+}
 
 #define StartRecordTime( start )			\
-	start = 0;
+	start = mach_absolute_time();
 
 #define StopRecordTime( end )				\
-	end = 1;
+	end = mach_absolute_time();
 
 #endif
 
@@ -210,7 +219,7 @@ double ticksPerNanosecond;
 PrintClocks
 ============
 */
-void PrintClocks( const char *string, int dataCount, int clocks, int otherClocks = 0 ) {
+void PrintClocks( const char *string, int dataCount, TIME_TYPE clocks, TIME_TYPE otherClocks = 0 ) {
 	int i;
 
 	idLib::common->Printf( string );
@@ -221,9 +230,9 @@ void PrintClocks( const char *string, int dataCount, int clocks, int otherClocks
 	if ( otherClocks && clocks ) {
 		otherClocks -= baseClocks;
 		int p = (int) ( (float) ( otherClocks - clocks ) * 100.0f / (float) otherClocks );
-		idLib::common->Printf( "c = %4d, clcks = %5d, %d%%\n", dataCount, clocks, p );
+		idLib::common->Printf( "c = %4d, clcks = %5ld, %d%%\n", dataCount, clocks, p );
 	} else {
-		idLib::common->Printf( "c = %4d, clcks = %5d\n", dataCount, clocks );
+		idLib::common->Printf( "c = %4d, clcks = %5ld\n", dataCount, clocks );
 	}
 }
 
@@ -233,7 +242,7 @@ GetBaseClocks
 ============
 */
 void GetBaseClocks( void ) {
-	int i, start, end, bestClocks;
+	TIME_TYPE i, start, end, bestClocks;
 
 	bestClocks = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -4055,6 +4064,8 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	idLib::common->Printf( "using %s for SIMD processing\n", p_simd->GetName() );
 
 	GetBaseClocks();
+
+	idLib::common->Printf( "baseClocks = %ld\n", baseClocks );
 
 	TestMath();
 	TestAdd();
