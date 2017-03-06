@@ -58,7 +58,7 @@ idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_B
 idCVar r_multiSamples( "r_multiSamples", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "number of antialiasing samples" );
 idCVar r_mode( "r_mode", "0", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_INTEGER, "video mode number" );
 idCVar r_displayRefresh( "r_displayRefresh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 200.0f );
-idCVar r_fullscreen( "r_fullscreen", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "0 = windowed, 1 = full screen" );
+idCVar r_fullscreen( "r_fullscreen", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "0 = windowed, 1 = full screen" );
 idCVar r_customWidth( "r_customWidth", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom screen width. set r_mode to -1 to activate" );
 idCVar r_customHeight( "r_customHeight", "486", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom screen height. set r_mode to -1 to activate" );
 idCVar r_singleTriangle( "r_singleTriangle", "0", CVAR_RENDERER | CVAR_BOOL, "only draw a single triangle per primitive" );
@@ -235,8 +235,6 @@ void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
 void (APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
 
-void (APIENTRY * qglColorTableEXT)( int, int, int, int, int, const void * );
-
 // EXT_stencil_two_side
 PFNGLACTIVESTENCILFACEEXTPROC			qglActiveStencilFaceEXT;
 
@@ -355,12 +353,6 @@ static void R_CheckPortableExtensions( void ) {
 	} else {
 		common->Printf( "X..%s not found\n", "GL_1.4_texture_lod_bias" );
 		glConfig.textureLODBiasAvailable = false;
-	}
-
-	// GL_EXT_shared_texture_palette
-	glConfig.sharedTexturePaletteAvailable = R_CheckExtension( "GL_EXT_shared_texture_palette" );
-	if ( glConfig.sharedTexturePaletteAvailable ) {
-		qglColorTableEXT = ( void ( APIENTRY * ) ( int, int, int, int, int, const void * ) ) GLimp_ExtensionPointer( "glColorTableEXT" );
 	}
 
 	// GL_EXT_texture3D (not currently used for anything)
@@ -507,29 +499,27 @@ static bool R_GetModeInfo( int *width, int *height, int mode ) {
 //     to overwrite the default resolution list in the system options menu
 
 // "r_custom*;640x480;800x600;1024x768;..."
-idStr R_GetVidModeListString()
-{
+idStr R_GetVidModeListString() {
 	idStr ret = "r_custom*";
-	// for some reason, modes 0-2 are not used. maybe too small for GUI?
-	for(int mode=3; mode < r_vidModes.Num(); ++mode)
-	{
+
+	for ( int mode = 0 ; mode < r_vidModes.Num() ; ++mode ) {
 		int w, h;
-		if(R_GetModeInfo(&w, &h, mode))
-		{
+
+		if ( R_GetModeInfo( &w, &h, mode ) ) {
 			idStr modeStr;
-			sprintf(modeStr, ";%dx%d", w, h);
+			sprintf( modeStr, ";%dx%d", w, h );
 			ret += modeStr;
 		}
 	}
+
 	return ret;
 }
 
 // r_mode values for resolutions from R_GetVidModeListString(): "-1;3;4;5;..."
-idStr R_GetVidModeValsString()
-{
+idStr R_GetVidModeValsString() {
 	idStr ret = "-1"; // for custom resolutions using r_customWidth/r_customHeight
-	for(int mode = 3; mode < r_vidModes.Num(); ++mode)
-	{
+
+	for ( int mode = 0 ; mode < r_vidModes.Num() ; ++mode ) {
 		ret += ";";
 		ret += mode;
 	}

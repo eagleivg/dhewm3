@@ -162,17 +162,6 @@ void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba
 		}
 	}
 
-	if ( glConfig.sharedTexturePaletteAvailable ) {
-		qglTexImage2D( GL_TEXTURE_2D,
-					mipLevel,
-					GL_COLOR_INDEX8_EXT,
-					width,
-					height,
-					0,
-					GL_COLOR_INDEX,
-					GL_UNSIGNED_BYTE,
-					normals );
-	}
 }
 
 
@@ -259,10 +248,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first
 	if ( minimumDepth == TD_BUMP ) {
-		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1 && glConfig.sharedTexturePaletteAvailable ) {
-			// image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
-			return GL_COLOR_INDEX8_EXT;
-		} else if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable ) {
+		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable ) {
 			// image_useNormalCompression == 2 uses rxgb format which produces really good quality for medium settings
 			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 		} else {
@@ -1389,13 +1375,6 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 
 	if ( magic != DDS_MAKEFOURCC('D', 'D', 'S', ' ')) {
 		common->Printf( "CheckPrecompressedImage( %s ): magic != 'DDS '\n", imgName.c_str() );
-		R_StaticFree( data );
-		return false;
-	}
-
-	// if we don't support color index textures, we must load the full image
-	// should we just expand the 256 color image to 32 bit for upload?
-	if ( ddspf_dwFlags & DDSF_ID_INDEXCOLOR && !glConfig.sharedTexturePaletteAvailable ) {
 		R_StaticFree( data );
 		return false;
 	}
