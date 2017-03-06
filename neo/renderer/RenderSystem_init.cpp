@@ -498,6 +498,8 @@ static bool R_GetModeInfo( int *width, int *height, int mode ) {
 		*height = vm->height;
 	}
 
+	common->Printf("select video mode %d: %dx%d\"\n", mode, *width, *height);
+
 	return true;
 }
 
@@ -525,8 +527,8 @@ idStr R_GetVidModeListString()
 // r_mode values for resolutions from R_GetVidModeListString(): "-1;3;4;5;..."
 idStr R_GetVidModeValsString()
 {
-	idStr ret =  "-1"; // for custom resolutions using r_customWidth/r_customHeight
-	for(int mode=3; mode < r_vidModes.Num(); ++mode)
+	idStr ret = "-1"; // for custom resolutions using r_customWidth/r_customHeight
+	for(int mode = 3; mode < r_vidModes.Num(); ++mode)
 	{
 		ret += ";";
 		ret += mode;
@@ -542,11 +544,10 @@ R_AddVideoMode
 
 This function adds videomode to videomodes list
 */
-
-void R_AddVideoMode( int width, int height )
+void R_AddVideoMode(int width, int height)
 {
-	r_vidModes.Append( *( new vidmode_t( width,	height ) ) );
-	common->Printf( "New video mode: \"Mode %d: %dx%d\"\n", r_vidModes.Num()-1, width, height );
+	r_vidModes.Append(*(new vidmode_t(width, height)));
+	common->Printf("New video mode: \"Mode %d: %dx%d\"\n", r_vidModes.Num() - 1, width, height);
 }
 
 /*
@@ -577,12 +578,18 @@ void R_InitOpenGL( void ) {
 #if( SDL_MAJOR_VERSION == 2 )
 	// TODO: support multiscreen
 	int displayNum = 0;
+	SDL_DisplayMode prev_mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
 
 	for( int i = 0; i < SDL_GetNumDisplayModes( displayNum ); ++i )
 	{
 		SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
 		SDL_GetDisplayMode( displayNum, i, &mode );
-		R_AddVideoMode( mode.w, mode.h );
+
+		if(prev_mode.h != mode.h || prev_mode.w != mode.w) // skip resolution dublicate with different refresh rate
+			R_AddVideoMode( mode.w, mode.h );
+
+		prev_mode.h = mode.h;
+		prev_mode.w = mode.w;
 	}
 #else
 	SDL_Rect** modes;
