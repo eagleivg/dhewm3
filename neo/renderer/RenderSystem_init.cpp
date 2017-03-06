@@ -573,7 +573,7 @@ void R_InitOpenGL( void ) {
 	for( int i = 0; i < SDL_GetNumDisplayModes( displayNum ); ++i )
 	{
 		SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
-		SDL_GetDisplayMode( displayNum, i, &mode );
+		SDL_GetDisplayMode( displayNum, SDL_GetNumDisplayModes( displayNum ) - i, &mode );
 
 		if(prev_mode.h != mode.h || prev_mode.w != mode.w) // skip resolution dublicate with different refresh rate
 			R_AddVideoMode( mode.w, mode.h );
