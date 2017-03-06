@@ -490,8 +490,6 @@ static bool R_GetModeInfo( int *width, int *height, int mode ) {
 		*height = vm->height;
 	}
 
-	common->Printf("select video mode %d: %dx%d\"\n", mode, *width, *height);
-
 	return true;
 }
 
@@ -615,6 +613,7 @@ void R_InitOpenGL( void ) {
 		parms.stereo = false;
 
 		if ( GLimp_Init( parms ) ) {
+			common->Printf("selected video mode %d: %dx%d\"\n", r_mode.GetInteger(), parms.width, parms.height);
 			// it worked
 			break;
 		}
