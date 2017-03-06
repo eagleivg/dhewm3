@@ -266,7 +266,11 @@ PFNGLPROGRAMENVPARAMETER4FVARBPROC		qglProgramEnvParameter4fvARB;
 PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 
 // GL_EXT_depth_bounds_test
-PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
+PFNGLDEPTHBOUNDSEXTPROC					qglDepthBoundsEXT;
+
+// Tesselation
+PFNGLPATCHPARAMETERIPROC				qglPatchParameteri;
+PFNGLPATCHPARAMETERFVPROC				qglPatchParameterfv;
 
 /*
 =================
@@ -437,6 +441,10 @@ static void R_CheckPortableExtensions( void ) {
 
 	// GL_ARB_tessellation_shader
 	glConfig.tesselationAvailable = R_CheckExtension( "GL_ARB_tessellation_shader" );
+	if ( glConfig.tesselationAvailable ) {
+		qglPatchParameteri = (PFNGLPATCHPARAMETERIPROC)GLimp_ExtensionPointer( "glPatchParameteri" );
+		qglPatchParameterfv = (PFNGLPATCHPARAMETERFVPROC)GLimp_ExtensionPointer( "glPatchParameterfv" );
+	}
 
 }
 
