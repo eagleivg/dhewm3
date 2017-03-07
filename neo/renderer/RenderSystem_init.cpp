@@ -548,6 +548,47 @@ void R_AddVideoMode(int width, int height)
 
 /*
 ==================
+R_GetVideoModes
+
+Fill r_vidModes using SDL
+==================
+*/
+void R_GetVideoModes() {
+	r_vidModes.Clear();
+
+#if( SDL_MAJOR_VERSION == 2 )
+	// TODO: support multiscreen
+	int displayNum = 0;
+	SDL_DisplayMode prev_mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
+
+	int display_modes = SDL_GetNumDisplayModes( displayNum );
+
+	for( int i = display_modes ; i > 0 ; i-- )
+	{
+		SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
+		SDL_GetDisplayMode( displayNum, i - 1, &mode );
+
+		if(prev_mode.h != mode.h || prev_mode.w != mode.w) // skip resolution dublicate with different refresh rate
+			R_AddVideoMode( mode.w, mode.h );
+
+		prev_mode.h = mode.h;
+		prev_mode.w = mode.w;
+	}
+#else
+	SDL_Rect** modes;
+
+	modes = SDL_ListModes(NULL, SDL_FULLSCREEN|SDL_HWSURFACE);
+
+	for (int i = 0; modes[i]; ++i )
+	{
+		R_AddVideoMode( modes[i]->w, modes[i]->h );
+	}
+#endif
+}
+
+
+/*
+==================
 R_InitOpenGL
 
 This function is responsible for initializing a valid OpenGL subsystem
@@ -569,34 +610,7 @@ void R_InitOpenGL( void ) {
 
 	common->Printf( "----- Initializing OpenGL -----\n" );
 
-	r_vidModes.Clear();
-
-#if( SDL_MAJOR_VERSION == 2 )
-	// TODO: support multiscreen
-	int displayNum = 0;
-	SDL_DisplayMode prev_mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
-
-	for( int i = 0; i < SDL_GetNumDisplayModes( displayNum ); ++i )
-	{
-		SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
-		SDL_GetDisplayMode( displayNum, SDL_GetNumDisplayModes( displayNum ) - i, &mode );
-
-		if(prev_mode.h != mode.h || prev_mode.w != mode.w) // skip resolution dublicate with different refresh rate
-			R_AddVideoMode( mode.w, mode.h );
-
-		prev_mode.h = mode.h;
-		prev_mode.w = mode.w;
-	}
-#else
-	SDL_Rect** modes;
-
-	modes = SDL_ListModes(NULL, SDL_FULLSCREEN|SDL_HWSURFACE);
-
-	for (int i = 0; modes[i]; ++i )
-	{
-		R_AddVideoMode( modes[i]->w, modes[i]->h );
-	}
-#endif
+	R_GetVideoModes();
 
 	if ( glConfig.isInitialized ) {
 		common->FatalError( "R_InitOpenGL called while active" );
