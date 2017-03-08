@@ -110,6 +110,24 @@ extern PFNGLPROGRAMENVPARAMETER4FVARBPROC	qglProgramEnvParameter4fvARB;
 extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 
 // GL_EXT_depth_bounds_test
-extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
+extern PFNGLDEPTHBOUNDSEXTPROC				qglDepthBoundsEXT;
+
+//GLSL - use only for tess shaders, therefore be depend of this
+extern PFNGLCREATEPROGRAMPROC				qglCreateProgram;
+extern PFNGLCREATESHADERPROC				qglCreateShader;
+extern PFNGLSHADERSOURCEPROC				qglShaderSource;
+extern PFNGLCOMPILESHADERPROC				qglCompileShader;
+extern PFNGLGETSHADERIVPROC					qglGetShaderiv;
+extern PFNGLGETSHADERINFOLOGPROC			qglGetShaderInfoLog;
+extern PFNGLATTACHSHADERPROC				qglAttachShader;
+extern PFNGLUSEPROGRAMPROC					qglUseProgram;
+extern PFNGLLINKPROGRAMPROC					qglLinkProgram;
+extern PFNGLDELETEPROGRAMPROC				qglDeleteProgram;
+extern PFNGLDELETESHADERPROC				qglDeleteShader;
+
+// Tesselation
+extern PFNGLPATCHPARAMETERIPROC				qglPatchParameteri;
+extern PFNGLPATCHPARAMETERFVPROC			qglPatchParameterfv;
+extern PFNGLUNIFORMMATRIX4FVPROC			qglUniformMatrix4fv;
 
 #endif

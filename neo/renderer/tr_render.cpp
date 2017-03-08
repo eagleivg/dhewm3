@@ -91,7 +91,13 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 		}
 	}
 
-	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) {
+	if ( r_useTesselation.GetBool() ) {
+		qglDrawElements( GL_PATCHES,
+						r_singleTriangle.GetBool() ? 3 : tri->numIndexes,
+						GL_INDEX_TYPE,
+						tri->indexes );
+	}
+	else if ( tri->indexCache && r_useIndexBuffers.GetBool() ) {
 		qglDrawElements( GL_TRIANGLES,
 						r_singleTriangle.GetBool() ? 3 : tri->numIndexes,
 						GL_INDEX_TYPE,

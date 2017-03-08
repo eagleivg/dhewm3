@@ -66,6 +66,10 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_S, din->bumpMatrix[0].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_T, din->bumpMatrix[1].ToFloatPtr() );
 #endif
+	if ( r_useTesselation.GetBool() ) {
+		qglUniformMatrix4fv( PP_BUMP_MATRIX_S, 1, GL_TRUE, din->bumpMatrix[0].ToFloatPtr() );
+		qglUniformMatrix4fv( PP_BUMP_MATRIX_T, 1, GL_TRUE, din->bumpMatrix[1].ToFloatPtr() );
+	}
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DIFFUSE_MATRIX_S, din->diffuseMatrix[0].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DIFFUSE_MATRIX_T, din->diffuseMatrix[1].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_SPECULAR_MATRIX_S, din->specularMatrix[0].ToFloatPtr() );
@@ -156,10 +160,6 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
-	if ( r_useTesselation.GetBool() ) {
-		qglEnable( GL_TESS_CONTROL_SHADER );
-		qglEnable( GL_TESS_EVALUATION_SHADER );
-	}
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArrayARB( 8 );
@@ -232,10 +232,6 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	qglDisable(GL_VERTEX_PROGRAM_ARB);
 	qglDisable(GL_FRAGMENT_PROGRAM_ARB);
-	if ( r_useTesselation.GetBool() ) {
-		qglDisable( GL_TESS_CONTROL_SHADER );
-		qglDisable( GL_TESS_EVALUATION_SHADER );
-	}
 }
 
 
@@ -349,11 +345,110 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },
-	{ GL_TESS_EVALUATION_SHADER, VPROG_DISPLACEMENT_ENVIRONMENT, "tessEval.tes" },
-	{ GL_TESS_CONTROL_SHADER, FPROG_DISPLACEMENT_ENVIRONMENT, "tessControl.tcs" },
+	{ GL_TESS_EVALUATION_SHADER, 0, "tessEval.tes" },
+	{ GL_TESS_CONTROL_SHADER, 0, "tessControl.tcs" },
 
 	// additional programs can be dynamically specified in materials
 };
+
+/*
+=================
+R_LoadGLSLProgram
+=================
+*/
+void R_LoadGLSLProgram( int progIndex ) {
+	if ( progs[progIndex].target != GL_TESS_CONTROL_SHADER && progs[progIndex].target != GL_TESS_EVALUATION_SHADER ) {
+		return;
+	}
+
+	idStr	fullPath = "glprogs/";
+	fullPath += progs[progIndex].name;
+	char	*fileBuffer;
+	char	*buffer;
+	char	*start = NULL, *end;
+	GLuint	program, shader;
+
+	common->Printf( "%s", fullPath.c_str() );
+
+	// load the program even if we don't support it, so
+	// fs_copyfiles can generate cross-platform data dumps
+	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );
+	if ( !fileBuffer ) {
+		common->Printf( ": File not found\n" );
+		return;
+	}
+
+	// copy to stack memory and free
+	buffer = (char *)_alloca( strlen( fileBuffer ) + 1 );
+	strcpy( buffer, fileBuffer );
+	fileSystem->FreeFile( fileBuffer );
+
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
+	// vertex and fragment programs can both be present in a single file, so
+	// scan for the proper header to be the start point, and stamp a 0 in after the end
+
+	if ( !glConfig.tesselationAvailable ) {
+		common->Printf( ": GL_ARB_tessellation_shader not available\n" );
+		return;
+	}
+
+	start = buffer;
+	end = strchr( start, '\0' );
+
+	if ((program = qglCreateProgram()) == 0)
+	{
+		common->Printf("Creating shader program fail (%d)\n", qglGetError());
+		return;
+	}
+
+	//
+	// submit the program string at start to GL
+	//
+	if ( progs[progIndex].ident == 0 ) {
+		// allocate a new identifier for this program
+		progs[progIndex].ident = PROG_USER + program;
+	}
+
+	if ((shader = qglCreateShader(progs[progIndex].target)) == 0)
+	{
+		common->Printf("Creating GLSL shader fail (%d)\n", qglGetError());
+		qglDeleteProgram(program);
+		return;
+	}
+
+	GLint status, length;
+	length = end - start;
+
+	qglShaderSource(shader, 1, (const GLchar**)&start, (const GLint*)&length);
+	qglCompileShader(shader);
+
+	GLchar buf[1024];
+
+	qglGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+
+	if (status != GL_TRUE)
+	{
+		qglGetShaderInfoLog(shader, 1024, &length, buf);
+		common->Printf("Shader: %s\n", (const char*)buf);
+		qglDeleteShader(shader);
+		qglDeleteProgram(program);
+		return;
+	}
+
+	qglAttachShader(program, shader);
+
+	qglDeleteShader(shader);
+
+	qglLinkProgram(program);
+	qglUseProgram(program);
+
+	qglGetError();
+
+	common->Printf( "\n" );
+}
 
 /*
 =================
@@ -361,6 +456,10 @@ R_LoadARBProgram
 =================
 */
 void R_LoadARBProgram( int progIndex ) {
+	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER ) {
+		return;
+	}
+
 	int		ofs;
 	int		err;
 	idStr	fullPath = "glprogs/";
@@ -414,23 +513,12 @@ void R_LoadARBProgram( int progIndex ) {
 		start = strstr( buffer, "!!ARBfp" );
 	}
 
-	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER ) {
-		if ( !glConfig.tesselationAvailable ) {
-			common->Printf( ": GL_ARB_tessellation_shader not available\n" );
-			return;
-		}
-		start = buffer;
-	}
-
 	if ( !start ) {
 		common->Printf( ": !!ARB not found\n" );
 		return;
 	}
 
-	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER ) {
-		end = strchr( start, '\0' ); // this is UGLY!!! TODO rewrite this
-	} else
-		end = strstr( start, "END" );
+	end = strstr( start, "END" );
 
 	if ( !end ) {
 		common->Printf( ": END not found\n" );
@@ -506,6 +594,20 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	R_LoadARBProgram( i );
 
 	return progs[i].ident;
+}
+
+/*
+==================
+R_ReloadGLSLPrograms_f
+==================
+*/
+void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
+	int		i;
+
+	common->Printf( "----- R_ReloadGLSLPrograms -----\n" );
+	for ( i = 0 ; progs[i].name[0] ; i++ ) {
+		R_LoadGLSLProgram( i );
+	}
 }
 
 /*

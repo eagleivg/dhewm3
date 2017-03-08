@@ -268,9 +268,23 @@ PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 PFNGLDEPTHBOUNDSEXTPROC					qglDepthBoundsEXT;
 
+//GLSL - use only for tess shaders, therefore be depend of this
+PFNGLCREATEPROGRAMPROC					qglCreateProgram;
+PFNGLCREATESHADERPROC					qglCreateShader;
+PFNGLSHADERSOURCEPROC					qglShaderSource;
+PFNGLCOMPILESHADERPROC					qglCompileShader;
+PFNGLGETSHADERIVPROC					qglGetShaderiv;
+PFNGLGETSHADERINFOLOGPROC				qglGetShaderInfoLog;
+PFNGLATTACHSHADERPROC					qglAttachShader;
+PFNGLUSEPROGRAMPROC						qglUseProgram;
+PFNGLLINKPROGRAMPROC					qglLinkProgram;
+PFNGLDELETEPROGRAMPROC					qglDeleteProgram;
+PFNGLDELETESHADERPROC					qglDeleteShader;
+
 // Tesselation
 PFNGLPATCHPARAMETERIPROC				qglPatchParameteri;
 PFNGLPATCHPARAMETERFVPROC				qglPatchParameterfv;
+PFNGLUNIFORMMATRIX4FVPROC				qglUniformMatrix4fv;
 
 /*
 =================
@@ -444,6 +458,20 @@ static void R_CheckPortableExtensions( void ) {
 	if ( glConfig.tesselationAvailable ) {
 		qglPatchParameteri = (PFNGLPATCHPARAMETERIPROC)GLimp_ExtensionPointer( "glPatchParameteri" );
 		qglPatchParameterfv = (PFNGLPATCHPARAMETERFVPROC)GLimp_ExtensionPointer( "glPatchParameterfv" );
+		qglUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GLimp_ExtensionPointer( "glUniformMatrix4fv" );
+
+		//GLSL
+		qglCreateProgram = (PFNGLCREATEPROGRAMPROC)GLimp_ExtensionPointer( "glCreateProgram" );
+		qglCreateShader = (PFNGLCREATESHADERPROC)GLimp_ExtensionPointer( "glCreateShader" );
+		qglShaderSource = (PFNGLSHADERSOURCEPROC)GLimp_ExtensionPointer( "glShaderSource" );
+		qglCompileShader = (PFNGLCOMPILESHADERPROC)GLimp_ExtensionPointer( "glCompileShader" );
+		qglGetShaderiv = (PFNGLGETSHADERIVPROC)GLimp_ExtensionPointer( "glGetShaderiv" );
+		qglGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)GLimp_ExtensionPointer( "glGetShaderInfoLog" );
+		qglAttachShader = (PFNGLATTACHSHADERPROC)GLimp_ExtensionPointer( "glAttachShader" );
+		qglUseProgram = (PFNGLUSEPROGRAMPROC)GLimp_ExtensionPointer( "glUseProgram" );
+		qglLinkProgram = (PFNGLLINKPROGRAMPROC)GLimp_ExtensionPointer( "glLinkProgram" );
+		qglDeleteProgram = (PFNGLDELETEPROGRAMPROC)GLimp_ExtensionPointer( "glDeleteProgram" );
+		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
 	}
 
 }
@@ -694,6 +722,9 @@ void R_InitOpenGL( void ) {
 
 	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
 	R_ReloadARBPrograms_f( idCmdArgs() );
+
+	cmdSystem->AddCommand( "reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs" );
+	R_ReloadGLSLPrograms_f( idCmdArgs() );
 
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init();
