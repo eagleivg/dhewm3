@@ -553,6 +553,12 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 		}
 	}
 
+	if ( idStr::Icmp( r_renderer.GetString(), "vulkan" ) == 0 ) {
+		if ( glConfig.allowARB2Path ) {
+			backEndRenderer = BE_VULKAN;
+		}
+	}
+
 	// fallback
 	if ( backEndRenderer == BE_BAD ) {
 		// choose the best
@@ -570,8 +576,8 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;
-	case BE_VULCAN:
-		common->Printf( "using Vulcan renderSystem\n" );
+	case BE_VULKAN:
+		common->Printf( "using Vulkan renderSystem\n" );
 		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;

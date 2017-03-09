@@ -51,7 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 
 glconfig_t	glConfig;
 
-const char *r_rendererArgs[] = { "best", "arb2", "vulcan", NULL }; // TODO implement Vulcan backend!!!
+const char *r_rendererArgs[] = { "best", "arb2", "vulkan", NULL }; // TODO implement Vulkan backend!!!
 
 idCVar r_inhibitFragmentProgram( "r_inhibitFragmentProgram", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the fragment program extension" );
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
