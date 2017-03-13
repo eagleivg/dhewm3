@@ -46,7 +46,7 @@ GL_SelectTextureNoClient
 */
 static void GL_SelectTextureNoClient( int unit ) {
 	backEnd.glState.currenttmu = unit;
-	qglActiveTextureARB( GL_TEXTURE0_ARB + unit );
+	qglActiveTexture( GL_TEXTURE0 + unit );
 }
 
 /*
@@ -162,10 +162,10 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
 
 	// enable the vertex arrays
-	qglEnableVertexAttribArrayARB( 8 );
-	qglEnableVertexAttribArrayARB( 9 );
-	qglEnableVertexAttribArrayARB( 10 );
-	qglEnableVertexAttribArrayARB( 11 );
+	qglEnableVertexAttribArray( 8 );
+	qglEnableVertexAttribArray( 9 );
+	qglEnableVertexAttribArray( 10 );
+	qglEnableVertexAttribArray( 11 );
 	qglEnableClientState( GL_COLOR_ARRAY );
 
 	// texture 0 is the normalization cube map for the vector towards the light
@@ -191,10 +191,10 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
 		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
-		qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 
 		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
@@ -202,10 +202,10 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 		RB_CreateSingleDrawInteractions( surf, RB_ARB2_DrawInteraction );
 	}
 
-	qglDisableVertexAttribArrayARB( 8 );
-	qglDisableVertexAttribArrayARB( 9 );
-	qglDisableVertexAttribArrayARB( 10 );
-	qglDisableVertexAttribArrayARB( 11 );
+	qglDisableVertexAttribArray( 8 );
+	qglDisableVertexAttribArray( 9 );
+	qglDisableVertexAttribArray( 10 );
+	qglDisableVertexAttribArray( 11 );
 	qglDisableClientState( GL_COLOR_ARRAY );
 
 	// disable features

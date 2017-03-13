@@ -230,7 +230,7 @@ idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CV
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
-void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
+void ( APIENTRY * qglActiveTexture )( GLenum texture );
 void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
 void (APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
@@ -256,9 +256,9 @@ PFNGLGETBUFFERPARAMETERIVPROC			qglGetBufferParameteriv;
 PFNGLGETBUFFERPOINTERVPROC				qglGetBufferPointerv;
 
 // ARB_vertex_program / ARB_fragment_program
-PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointerARB;
-PFNGLENABLEVERTEXATTRIBARRAYARBPROC		qglEnableVertexAttribArrayARB;
-PFNGLDISABLEVERTEXATTRIBARRAYARBPROC	qglDisableVertexAttribArrayARB;
+PFNGLVERTEXATTRIBPOINTERPROC			qglVertexAttribPointer;
+PFNGLENABLEVERTEXATTRIBARRAYPROC		qglEnableVertexAttribArray;
+PFNGLDISABLEVERTEXATTRIBARRAYPROC		qglDisableVertexAttribArray;
 PFNGLPROGRAMSTRINGARBPROC				qglProgramStringARB;
 PFNGLBINDPROGRAMARBPROC					qglBindProgramARB;
 PFNGLGENPROGRAMSARBPROC					qglGenProgramsARB;
@@ -315,17 +315,17 @@ static void R_CheckPortableExtensions( void ) {
 	if ( glConfig.multitextureAvailable ) {
 		qglMultiTexCoord2fARB = (void(APIENTRY *)(GLenum, GLfloat, GLfloat))GLimp_ExtensionPointer( "glMultiTexCoord2fARB" );
 		qglMultiTexCoord2fvARB = (void(APIENTRY *)(GLenum, GLfloat *))GLimp_ExtensionPointer( "glMultiTexCoord2fvARB" );
-		qglActiveTextureARB = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTextureARB" );
+		qglActiveTexture = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTexture" );
 		qglClientActiveTextureARB = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glClientActiveTextureARB" );
-		qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, (GLint *)&glConfig.maxTextureUnits );
+		qglGetIntegerv( GL_MAX_TEXTURE_UNITS, (GLint *)&glConfig.maxTextureUnits );
 		if ( glConfig.maxTextureUnits > MAX_MULTITEXTURE_UNITS ) {
 			glConfig.maxTextureUnits = MAX_MULTITEXTURE_UNITS;
 		}
 		if ( glConfig.maxTextureUnits < 2 ) {
 			glConfig.multitextureAvailable = false;	// shouldn't ever happen
 		}
-		qglGetIntegerv( GL_MAX_TEXTURE_COORDS_ARB, (GLint *)&glConfig.maxTextureCoords );
-		qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS_ARB, (GLint *)&glConfig.maxTextureImageUnits );
+		qglGetIntegerv( GL_MAX_TEXTURE_COORDS, (GLint *)&glConfig.maxTextureCoords );
+		qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, (GLint *)&glConfig.maxTextureImageUnits );
 	}
 
 	// GL_ARB_texture_env_combine
@@ -417,9 +417,9 @@ static void R_CheckPortableExtensions( void ) {
 	// ARB_vertex_program
 	glConfig.ARBVertexProgramAvailable = R_CheckExtension( "GL_ARB_vertex_program" );
 	if (glConfig.ARBVertexProgramAvailable) {
-		qglVertexAttribPointerARB = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
-		qglEnableVertexAttribArrayARB = (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
-		qglDisableVertexAttribArrayARB = (PFNGLDISABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glDisableVertexAttribArrayARB" );
+		qglVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)GLimp_ExtensionPointer( "glVertexAttribPointer" );
+		qglEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)GLimp_ExtensionPointer( "glEnableVertexAttribArray" );
+		qglDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)GLimp_ExtensionPointer( "glDisableVertexAttribArray" );
 		qglProgramStringARB = (PFNGLPROGRAMSTRINGARBPROC)GLimp_ExtensionPointer( "glProgramStringARB" );
 		qglBindProgramARB = (PFNGLBINDPROGRAMARBPROC)GLimp_ExtensionPointer( "glBindProgramARB" );
 		qglGenProgramsARB = (PFNGLGENPROGRAMSARBPROC)GLimp_ExtensionPointer( "glGenProgramsARB" );
@@ -1811,9 +1811,9 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	common->Printf( "GL_VERSION: %s\n", glConfig.version_string );
 	common->Printf( "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
 	common->Printf( "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
-	common->Printf( "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.maxTextureUnits );
-	common->Printf( "GL_MAX_TEXTURE_COORDS_ARB: %d\n", glConfig.maxTextureCoords );
-	common->Printf( "GL_MAX_TEXTURE_IMAGE_UNITS_ARB: %d\n", glConfig.maxTextureImageUnits );
+	common->Printf( "GL_MAX_TEXTURE_UNITS: %d\n", glConfig.maxTextureUnits );
+	common->Printf( "GL_MAX_TEXTURE_COORDS: %d\n", glConfig.maxTextureCoords );
+	common->Printf( "GL_MAX_TEXTURE_IMAGE_UNITS: %d\n", glConfig.maxTextureImageUnits );
 	common->Printf( "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
 	common->Printf( "MODE: %d, %d x %d %s hz:", r_mode.GetInteger(), glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen.GetBool()] );
 

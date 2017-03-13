@@ -202,11 +202,11 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 				GL_SelectTexture( 0 );
 
 				qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-				qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-				qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+				qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+				qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 
-				qglEnableVertexAttribArrayARB( 9 );
-				qglEnableVertexAttribArrayARB( 10 );
+				qglEnableVertexAttribArray( 9 );
+				qglEnableVertexAttribArray( 10 );
 				qglEnableClientState( GL_NORMAL_ARRAY );
 
 				// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
@@ -301,8 +301,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 				globalImages->BindNull();
 				GL_SelectTexture( 0 );
 
-				qglDisableVertexAttribArrayARB( 9 );
-				qglDisableVertexAttribArrayARB( 10 );
+				qglDisableVertexAttribArray( 9 );
+				qglDisableVertexAttribArray( 10 );
 			} else {
 				// per-pixel reflection mapping without bump mapping
 			}
@@ -792,13 +792,13 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 				continue;
 			}
 			qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-			qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+			qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+			qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 			qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
 			qglEnableClientState( GL_COLOR_ARRAY );
-			qglEnableVertexAttribArrayARB( 9 );
-			qglEnableVertexAttribArrayARB( 10 );
+			qglEnableVertexAttribArray( 9 );
+			qglEnableVertexAttribArray( 10 );
 			qglEnableClientState( GL_NORMAL_ARRAY );
 
 			GL_State( pStage->drawStateBits );
@@ -853,8 +853,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, 0 );
 
 			qglDisableClientState( GL_COLOR_ARRAY );
-			qglDisableVertexAttribArrayARB( 9 );
-			qglDisableVertexAttribArrayARB( 10 );
+			qglDisableVertexAttribArray( 9 );
+			qglDisableVertexAttribArray( 10 );
 			qglDisableClientState( GL_NORMAL_ARRAY );
 			continue;
 		}

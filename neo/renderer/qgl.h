@@ -70,7 +70,7 @@ GLExtension_t GLimp_ExtensionPointer( const char *name );
 // multitexture
 extern	void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 extern	void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
-extern	void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
+extern	void ( APIENTRY * qglActiveTexture )( GLenum texture );
 extern	void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
 // ARB_vertex_buffer_object
@@ -100,9 +100,9 @@ extern	PFNGLCOMPRESSEDTEXIMAGE2DARBPROC	qglCompressedTexImage2D;
 extern	PFNGLGETCOMPRESSEDTEXIMAGEARBPROC	qglGetCompressedTexImage;
 
 // ARB_vertex_program / ARB_fragment_program
-extern PFNGLVERTEXATTRIBPOINTERARBPROC		qglVertexAttribPointerARB;
-extern PFNGLENABLEVERTEXATTRIBARRAYARBPROC	qglEnableVertexAttribArrayARB;
-extern PFNGLDISABLEVERTEXATTRIBARRAYARBPROC	qglDisableVertexAttribArrayARB;
+extern PFNGLVERTEXATTRIBPOINTERPROC		qglVertexAttribPointer;
+extern PFNGLENABLEVERTEXATTRIBARRAYPROC	qglEnableVertexAttribArray;
+extern PFNGLDISABLEVERTEXATTRIBARRAYPROC	qglDisableVertexAttribArray;
 extern PFNGLPROGRAMSTRINGARBPROC			qglProgramStringARB;
 extern PFNGLBINDPROGRAMARBPROC				qglBindProgramARB;
 extern PFNGLGENPROGRAMSARBPROC				qglGenProgramsARB;

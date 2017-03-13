@@ -126,7 +126,7 @@ private:
 
 	bool			virtualMemory;			// not fast stuff
 
-	bool			allocatingTempBuffer;	// force GL_STREAM_DRAW_ARB
+	bool			allocatingTempBuffer;	// force GL_STREAM_DRAW
 
 	vertCache_t		*tempBuffers[NUM_VERTEX_FRAMES];		// allocated at startup
 	bool			tempOverflow;			// had to alloc a temp in static memory

@@ -74,7 +74,7 @@ void idVertexCache::ActuallyFree( vertCache_t *block ) {
 #if 0		// this isn't really necessary, it will be reused soon enough
 			// filling with zero length data is the equivalent of freeing
 			qglBindBuffer(GL_ARRAY_BUFFER, block->vbo);
-			qglBufferData(GL_ARRAY_BUFFER, 0, 0, GL_DYNAMIC_DRAW_ARB);
+			qglBufferData(GL_ARRAY_BUFFER, 0, 0, GL_DYNAMIC_DRAW);
 #endif
 		} else if ( block->virtMem ) {
 			Mem_Free( block->virtMem );
@@ -181,7 +181,7 @@ void idVertexCache::Init() {
 
 	byte	*junk = (byte *)Mem_Alloc( frameBytes );
 	for ( int i = 0 ; i < NUM_VERTEX_FRAMES ; i++ ) {
-		allocatingTempBuffer = true;	// force the alloc to use GL_STREAM_DRAW_ARB
+		allocatingTempBuffer = true;	// force the alloc to use GL_STREAM_DRAW
 		Alloc( junk, frameBytes, &tempBuffers[i] );
 		allocatingTempBuffer = false;
 		tempBuffers[i]->tag = TAG_FIXED;
@@ -284,13 +284,13 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 	if ( block->vbo ) {
 		if ( indexBuffer ) {
 			qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, block->vbo );
-			qglBufferData( GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptrARB)size, data, GL_STATIC_DRAW_ARB );
+			qglBufferData( GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptrARB)size, data, GL_STATIC_DRAW );
 		} else {
 			qglBindBuffer( GL_ARRAY_BUFFER, block->vbo );
 			if ( allocatingTempBuffer ) {
-				qglBufferData( GL_ARRAY_BUFFER, (GLsizeiptrARB)size, data, GL_STREAM_DRAW_ARB );
+				qglBufferData( GL_ARRAY_BUFFER, (GLsizeiptrARB)size, data, GL_STREAM_DRAW );
 			} else {
-				qglBufferData( GL_ARRAY_BUFFER, (GLsizeiptrARB)size, data, GL_STATIC_DRAW_ARB );
+				qglBufferData( GL_ARRAY_BUFFER, (GLsizeiptrARB)size, data, GL_STATIC_DRAW );
 			}
 		}
 	} else {

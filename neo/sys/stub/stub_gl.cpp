@@ -136,7 +136,7 @@ void APIENTRY glGetFloatv(GLenum pname, GLfloat *params){};
 void APIENTRY glGetIntegerv(GLenum pname, GLint *params){
 	switch( pname ) {
 		case GL_MAX_TEXTURE_SIZE: *params = 1024; break;
-		case GL_MAX_TEXTURE_UNITS_ARB: *params = 2; break;
+		case GL_MAX_TEXTURE_UNITS: *params = 2; break;
 		default: *params = 0; break;
 	}
 };
