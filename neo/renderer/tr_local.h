@@ -892,6 +892,7 @@ extern idCVar r_skipUpdates;			// 1 = don't accept any entity or light updates, 
 extern idCVar r_skipDeforms;			// leave all deform materials in their original state
 extern idCVar r_skipDynamicTextures;	// don't dynamically create textures
 extern idCVar r_skipLightScale;			// don't do any post-interaction light scaling, makes things dim on low-dynamic range cards
+extern idCVar r_skipBump;				// uses a flat surface instead of the bump map
 extern idCVar r_skipDisplacement;		// uses a flat surface instead of the displacement map
 extern idCVar r_skipSpecular;			// use black for specular
 extern idCVar r_skipDiffuse;			// use black for diffuse

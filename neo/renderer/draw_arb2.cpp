@@ -62,13 +62,13 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_PROJECT_T, din->lightProjection[1].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_PROJECT_Q, din->lightProjection[2].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_FALLOFF_S, din->lightProjection[3].ToFloatPtr() );
-#if 0 // for bump mapping
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_S, din->bumpMatrix[0].ToFloatPtr() );
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_T, din->bumpMatrix[1].ToFloatPtr() );
-#endif
+
 	if ( r_useTesselation.GetBool() ) {
 		qglUniformMatrix4fv( PP_BUMP_MATRIX_S, 1, GL_TRUE, din->bumpMatrix[0].ToFloatPtr() );
 		qglUniformMatrix4fv( PP_BUMP_MATRIX_T, 1, GL_TRUE, din->bumpMatrix[1].ToFloatPtr() );
+	} else {
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_S, din->bumpMatrix[0].ToFloatPtr() );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_T, din->bumpMatrix[1].ToFloatPtr() );
 	}
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DIFFUSE_MATRIX_S, din->diffuseMatrix[0].ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DIFFUSE_MATRIX_T, din->diffuseMatrix[1].ToFloatPtr() );
@@ -152,10 +152,6 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	} else {
 		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
 		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
-		if ( r_useTesselation.GetBool() ) {
-			qglBindProgramARB( GL_TESS_EVALUATION_SHADER, VPROG_DISPLACEMENT_ENVIRONMENT );
-			qglBindProgramARB( GL_TESS_CONTROL_SHADER, FPROG_DISPLACEMENT_ENVIRONMENT );
-		}
 	}
 
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
@@ -425,14 +421,14 @@ void R_LoadGLSLProgram( int progIndex ) {
 	qglShaderSource(shader, 1, (const GLchar**)&start, (const GLint*)&length);
 	qglCompileShader(shader);
 
-	GLchar buf[1024];
+	GLchar ErrorLog[1024];
 
 	qglGetShaderiv(shader, GL_COMPILE_STATUS, &status);
 
 	if (status != GL_TRUE)
 	{
-		qglGetShaderInfoLog(shader, 1024, &length, buf);
-		common->Printf("Shader: %s\n", (const char*)buf);
+		qglGetShaderInfoLog(shader, 1024, &length, ErrorLog);
+		common->Printf("Shader: %s\n", (const char*)ErrorLog);
 		qglDeleteShader(shader);
 		qglDeleteProgram(program);
 		return;
@@ -443,9 +439,20 @@ void R_LoadGLSLProgram( int progIndex ) {
 	qglDeleteShader(shader);
 
 	qglLinkProgram(program);
-	qglUseProgram(program);
 
-	qglGetError();
+	qglGetProgramiv( shader, GL_LINK_STATUS, &status );
+	if ( !status ) {
+		qglGetProgramInfoLog( shader, sizeof(ErrorLog), NULL, ErrorLog );
+		common->Printf( "Error linking shader program: '%s'\n", ErrorLog );
+		return;
+	}
+	qglUseProgram(program);
+	qglGetProgramiv( shader, GL_VALIDATE_STATUS, &status );
+	if ( !status ) {
+		qglGetProgramInfoLog( shader, sizeof(ErrorLog), NULL, ErrorLog );
+		common->Printf( "Invalid shader program: '%s'\n", ErrorLog );
+		return;
+	}
 
 	common->Printf( "\n" );
 }

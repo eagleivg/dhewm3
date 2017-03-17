@@ -92,6 +92,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 	}
 
 	if ( r_useTesselation.GetBool() ) {
+		qglPatchParameteri( GL_PATCH_VERTICES, r_singleTriangle.GetBool() ? 3 : tri->numIndexes );
 		qglDrawElements( GL_PATCHES,
 						r_singleTriangle.GetBool() ? 3 : tri->numIndexes,
 						GL_INDEX_TYPE,
@@ -669,8 +670,9 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 	if ( !din->specularImage || r_skipSpecular.GetBool() || din->ambientLight ) {
 		din->specularImage = globalImages->blackImage;
 	}
-	if ( !din->displacementImage || r_skipDisplacement.GetBool() ) {
-		din->displacementImage = globalImages->flatNormalMap;
+	if ( !din->displacementImage ) {
+		if ( (r_useTesselation.GetBool() && r_skipDisplacement.GetBool()) || (!r_useTesselation.GetBool() && r_skipBump.GetBool()) )
+			din->displacementImage = globalImages->flatNormalMap;
 	}
 
 	// if we wouldn't draw anything, don't call the Draw function
