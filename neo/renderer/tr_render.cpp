@@ -670,9 +670,10 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 	if ( !din->specularImage || r_skipSpecular.GetBool() || din->ambientLight ) {
 		din->specularImage = globalImages->blackImage;
 	}
-	if ( !din->displacementImage ) {
-		if ( (r_useTesselation.GetBool() && r_skipDisplacement.GetBool()) || (!r_useTesselation.GetBool() && r_skipBump.GetBool()) )
-			din->displacementImage = globalImages->flatNormalMap;
+	if ( !din->displacementImage
+			|| (r_useTesselation.GetBool() && r_skipDisplacement.GetBool())
+			|| (!r_useTesselation.GetBool() && r_skipBump.GetBool()) ) {
+		din->displacementImage = globalImages->flatNormalMap;
 	}
 
 	// if we wouldn't draw anything, don't call the Draw function
