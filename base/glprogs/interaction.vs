@@ -25,7 +25,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-
 uniform vec4 rpScreenCorrectionFactor	;
 uniform vec4 rpWindowCoord			;
 uniform vec4 rpDiffuseModifier		;
@@ -174,3 +173,87 @@ static vec2 vposToScreenPosTexCoord( vec2 vpos ) { return vpos.xy * rpWindowCoor
 
 #define BRANCH
 #define IFANY
+
+struct VS_IN {
+	vec3 position 	: POSITION;
+	vec2 texcoord 	: TEXCOORD0;
+	vec3 normal 		: NORMAL;
+	vec3 tangent 		: TANGENT;
+	vec3 bitangent 	: BITANGENT;
+	vec4 color 		: COLOR0;
+};
+
+struct VS_OUT {
+	vec4 position		: POSITION;
+	vec4 texcoord0	: TEXCOORD0;
+	vec4 texcoord1	: TEXCOORD1;
+	vec4 texcoord2	: TEXCOORD2;
+	vec4 texcoord3	: TEXCOORD3;
+	vec4 texcoord4	: TEXCOORD4;
+	vec4 texcoord5	: TEXCOORD5;
+	vec4 texcoord6	: TEXCOORD6;
+	vec4 color		: COLOR0;
+};
+
+void main( VS_IN vertex, out VS_OUT result ) {
+
+	vec3x3 tangentToWorld = vec3x3( vertex.tangent, vertex.bitangent, vertex.normal );
+	vec4x4 mvpMatrix = vec4x4( rpMVPmatrixX, rpMVPmatrixY, rpMVPmatrixZ, rpMVPmatrixW );
+
+	vec4 vertexPos = vec4( vertex.position, 1.0f );
+	result.position = mvpMatrix * vertexPos;
+
+	vec4 defaultTexCoord = vec4( 0.0f, 0.5f, 0.0f, 1.0f );
+
+	//calculate vector to light in R0
+	vec4 toLight = rpLocalLightOrigin - vertexPos;
+
+	//result.texcoord0
+	result.texcoord0.xyz = toLight.xyz * tangentToWorld;
+
+	//textures 1 takes the base coordinates by the texture matrix
+	result.texcoord1 = defaultTexCoord;
+	result.texcoord1.x = dot4( vertex.texcoord.xy, rpBumpMatrixS );
+	result.texcoord1.y = dot4( vertex.texcoord.xy, rpBumpMatrixT );
+
+	//# texture 2 has one texgen
+	result.texcoord2 = defaultTexCoord;
+	result.texcoord2.x = dot4( vertexPos, rpLightFalloffS );
+
+	//# texture 3 has three texgens
+	result.texcoord3.x = dot4( vertexPos, rpLightProjectionS );
+	result.texcoord3.y = dot4( vertexPos, rpLightProjectionT );
+	result.texcoord3.z = 0.0f;
+	result.texcoord3.w = dot4( vertexPos, rpLightProjectionQ );
+
+	//# textures 4 takes the base coordinates by the texture matrix
+	result.texcoord4 = defaultTexCoord;
+	result.texcoord4.x = dot4( vertex.texcoord.xy, rpDiffuseMatrixS );
+	result.texcoord4.y = dot4( vertex.texcoord.xy, rpDiffuseMatrixT );
+
+	//# textures 5 takes the base coordinates by the texture matrix
+	result.texcoord5 = defaultTexCoord;
+	result.texcoord5.x = dot4( vertex.texcoord.xy, rpSpecularMatrixS );
+	result.texcoord5.y = dot4( vertex.texcoord.xy, rpSpecularMatrixT );
+
+	//# texture 6's texcoords will be the halfangle in texture space
+
+	//# calculate normalized vector to light in R0
+	toLight = normalize( toLight );
+
+	//# calculate normalized vector to viewer in R1
+	vec4 toView = normalize( rpLocalViewOrigin - vertexPos );
+	
+	//# add together to become the half angle vector in object space (non-normalized)
+	vec4 halfAngleVector = toLight + toView;
+
+	//# put into texture space
+	result.texcoord6.xyz = halfAngleVector.xyz * tangentToWorld;
+	result.texcoord6.w = 1.0f;
+
+	//# generate the vertex color, which can be 1.0, color, or 1.0 - color
+	//# for 1.0 : env[16] = 0, env[17] = 1
+	//# for color : env[16] = 1, env[17] = 0
+	//# for 1.0-color : env[16] = -1, env[17] = 1	
+	result.color = ( swizzleColor( vertex.color ) * rpVertexColorModulate ) + rpVertexColorAdd;
+}

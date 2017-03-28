@@ -158,8 +158,10 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	// select the render prog
 	if ( surf->material->IsAmbientLight() ) {
 //		renderProgManager.BindShader_InteractionAmbient();
+		qglUseProgram( glsl_prog );
 	} else {
 //		renderProgManager.BindShader_Interaction();
+		qglUseProgram( glsl_prog );
 	}
 
 	// enable the vertex arrays
@@ -233,6 +235,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 // Unbind program
 //	renderProgManager.Unbind();
+	qglUseProgram( 0 );
 }
 
 
@@ -333,21 +336,9 @@ typedef struct {
 static	const int	MAX_GLPROGS = 200;
 
 // a single file can have both a vertex program and a fragment program
-static progDef_t	progs[MAX_GLPROGS] = {
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_TEST, "test.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST, "test.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION, "interaction.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION, "interaction.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BUMPY_ENVIRONMENT, "bumpyEnvironment.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BUMPY_ENVIRONMENT, "bumpyEnvironment.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT, "ambientLight.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT, "ambientLight.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW, "shadow.vp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_ENVIRONMENT, "environment.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },
-//	{ GL_VERTEX_SHADER, 0, "tessDumb.vs" },
+static progDef_t	glsl_progs[MAX_GLPROGS] = {
+	{ GL_VERTEX_SHADER, 0, "interaction.vs" },
+	{ GL_FRAGMENT_SHADER, 0, "interaction.fs" },
 	{ GL_TESS_EVALUATION_SHADER, 0, "tessEval.tes" },
 	{ GL_TESS_CONTROL_SHADER, 0, "tessControl.tcs" },
 
@@ -360,12 +351,8 @@ R_LoadGLSLProgram
 =================
 */
 void R_LoadGLSLProgram( int progIndex ) {
-	if ( progs[progIndex].target != GL_TESS_CONTROL_SHADER && progs[progIndex].target != GL_TESS_EVALUATION_SHADER && progs[progIndex].target != GL_VERTEX_SHADER ) {
-		return;
-	}
-
 	idStr	fullPath = "glprogs/";
-	fullPath += progs[progIndex].name;
+	fullPath += glsl_progs[progIndex].name;
 	char	*fileBuffer;
 	char	*buffer;
 	char	*start = NULL, *end;
@@ -404,12 +391,12 @@ void R_LoadGLSLProgram( int progIndex ) {
 	//
 	// submit the program string at start to GL
 	//
-	if ( progs[progIndex].ident == 0 ) {
+	if ( glsl_progs[progIndex].ident == 0 ) {
 		// allocate a new identifier for this program
-		progs[progIndex].ident = PROG_USER + glsl_prog;
+		glsl_progs[progIndex].ident = PROG_USER + glsl_prog;
 	}
 
-	if ((shader = qglCreateShader(progs[progIndex].target)) == 0)
+	if ((shader = qglCreateShader(glsl_progs[progIndex].target)) == 0)
 	{
 		common->Printf("Creating GLSL shader fail (%d)\n", qglGetError());
 		qglDeleteProgram(glsl_prog);
@@ -457,16 +444,16 @@ int R_FindGLSLProgram( GLenum target, const char *program ) {
 	stripped.StripFileExtension();
 
 	// see if it is already loaded
-	for ( i = 0 ; progs[i].name[0] ; i++ ) {
-		if ( progs[i].target != target ) {
+	for ( i = 0 ; glsl_progs[i].name[0] ; i++ ) {
+		if ( glsl_progs[i].target != target ) {
 			continue;
 		}
 
-		idStr	compare = progs[i].name;
+		idStr	compare = glsl_progs[i].name;
 		compare.StripFileExtension();
 
 		if ( !idStr::Icmp( stripped.c_str(), compare.c_str() ) ) {
-			return progs[i].ident;
+			return glsl_progs[i].ident;
 		}
 	}
 
@@ -475,13 +462,13 @@ int R_FindGLSLProgram( GLenum target, const char *program ) {
 	}
 
 	// add it to the list and load it
-	progs[i].ident = (program_t)0;	// will be gen'd by R_LoadARBProgram
-	progs[i].target = target;
-	strncpy( progs[i].name, program, sizeof( progs[i].name ) - 1 );
+	glsl_progs[i].ident = (program_t)0;	// will be gen'd by R_LoadARBProgram
+	glsl_progs[i].target = target;
+	strncpy( glsl_progs[i].name, program, sizeof( glsl_progs[i].name ) - 1 );
 
 	R_LoadGLSLProgram( i );
 
-	return progs[i].ident;
+	return glsl_progs[i].ident;
 }
 
 /*
@@ -498,7 +485,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 	}
 
 	common->Printf( "----- R_ReloadGLSLPrograms -----\n" );
-	for ( i = 0; progs[i].name[0] ; i++ ) {
+	for ( i = 0; glsl_progs[i].name[0] ; i++ ) {
 		R_LoadGLSLProgram( i );
 	}
 
