@@ -51,7 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 
 glconfig_t	glConfig;
 
-const char *r_rendererArgs[] = { "best", "arb2", "vulkan", NULL }; // TODO implement Vulkan backend!!!
+const char *r_rendererArgs[] = { "best", "arb2", "glsl", "vulkan", NULL }; // TODO implement Vulkan backend!!!
 
 idCVar r_inhibitFragmentProgram( "r_inhibitFragmentProgram", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the fragment program extension" );
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
@@ -458,16 +458,9 @@ static void R_CheckPortableExtensions( void ) {
 		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
 	}
 
-	// GL_ARB_tessellation_shader
-	glConfig.tesselationAvailable = R_CheckExtension( "GL_ARB_tessellation_shader" );
-	if ( glConfig.tesselationAvailable ) {
-		qglPatchParameteri = (PFNGLPATCHPARAMETERIPROC)GLimp_ExtensionPointer( "glPatchParameteri" );
-		qglPatchParameterfv = (PFNGLPATCHPARAMETERFVPROC)GLimp_ExtensionPointer( "glPatchParameterfv" );
-		qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
-		qglUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GLimp_ExtensionPointer( "glUniformMatrix4fv" );
-		qglUniform1i = (PFNGLUNIFORM1IPROC)GLimp_ExtensionPointer( "glUniform1i" );
-
-		//GLSL
+	//GLSL Support
+	glConfig.allowGLSLPath = R_CheckExtension( "GL_ARB_shader_objects" );
+	if ( glConfig.allowGLSLPath ) {
 		qglCreateProgram = (PFNGLCREATEPROGRAMPROC)GLimp_ExtensionPointer( "glCreateProgram" );
 		qglCreateShader = (PFNGLCREATESHADERPROC)GLimp_ExtensionPointer( "glCreateShader" );
 		qglShaderSource = (PFNGLSHADERSOURCEPROC)GLimp_ExtensionPointer( "glShaderSource" );
@@ -481,6 +474,17 @@ static void R_CheckPortableExtensions( void ) {
 		qglLinkProgram = (PFNGLLINKPROGRAMPROC)GLimp_ExtensionPointer( "glLinkProgram" );
 		qglDeleteProgram = (PFNGLDELETEPROGRAMPROC)GLimp_ExtensionPointer( "glDeleteProgram" );
 		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
+
+		qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
+		qglUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GLimp_ExtensionPointer( "glUniformMatrix4fv" );
+		qglUniform1i = (PFNGLUNIFORM1IPROC)GLimp_ExtensionPointer( "glUniform1i" );
+	}
+
+	// GL_ARB_tessellation_shader
+	glConfig.tesselationAvailable = R_CheckExtension( "GL_ARB_tessellation_shader" );
+	if ( glConfig.tesselationAvailable ) {
+		qglPatchParameteri = (PFNGLPATCHPARAMETERIPROC)GLimp_ExtensionPointer( "glPatchParameteri" );
+		qglPatchParameterfv = (PFNGLPATCHPARAMETERFVPROC)GLimp_ExtensionPointer( "glPatchParameterfv" );
 	}
 
 }
@@ -732,6 +736,7 @@ void R_InitOpenGL( void ) {
 	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
 	R_ReloadARBPrograms_f( idCmdArgs() );
 
+	R_GLSL_Init();
 	cmdSystem->AddCommand( "reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs" );
 	R_ReloadGLSLPrograms_f( idCmdArgs() );
 

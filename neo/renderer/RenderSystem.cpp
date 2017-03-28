@@ -553,6 +553,12 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 		}
 	}
 
+	if ( idStr::Icmp( r_renderer.GetString(), "glsl" ) == 0 ) {
+		if ( glConfig.allowGLSLPath ) {
+			backEndRenderer = BE_GLSL;
+		}
+	}
+
 	if ( idStr::Icmp( r_renderer.GetString(), "vulkan" ) == 0 ) {
 		if ( glConfig.allowARB2Path ) {
 			backEndRenderer = BE_VULKAN;
@@ -562,7 +568,10 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	// fallback
 	if ( backEndRenderer == BE_BAD ) {
 		// choose the best
-		if ( glConfig.allowARB2Path ) {
+		common->Printf( "choose the best renderSystem: " );
+		if ( glConfig.allowGLSLPath ) {
+			backEndRenderer = BE_GLSL;
+		} else if ( glConfig.allowARB2Path ) {
 			backEndRenderer = BE_ARB2;
 		}
 	}
@@ -573,6 +582,11 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	switch( backEndRenderer ) {
 	case BE_ARB2:
 		common->Printf( "using ARB2 renderSystem\n" );
+		backEndRendererHasVertexPrograms = true;
+		backEndRendererMaxLight = 999;
+		break;
+	case BE_GLSL:
+		common->Printf( "using GLSL renderSystem\n" );
 		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;

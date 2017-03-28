@@ -52,10 +52,10 @@ static void GL_SelectTextureNoClient( int unit ) {
 static GLuint glsl_prog = 0;
 /*
 ==================
-RB_ARB2_DrawInteraction
+RB_GLSL_DrawInteraction
 ==================
 */
-void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
+void	RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	// load all the vertex program parameters
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, din->localLightOrigin.ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_VIEW_ORIGIN, din->localViewOrigin.ToFloatPtr() );
@@ -142,11 +142,11 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 
 /*
 =============
-RB_ARB2_CreateDrawInteractions
+RB_GLSL_CreateDrawInteractions
 
 =============
 */
-void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
+void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf ) {
 		return;
 	}
@@ -155,16 +155,12 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
 	// bind the vertex program
-	if ( r_testARBProgram.GetBool() ) {
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST );
+	// select the render prog
+	if ( surf->material->IsAmbientLight() ) {
+//		renderProgManager.BindShader_InteractionAmbient();
 	} else {
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
+//		renderProgManager.BindShader_Interaction();
 	}
-
-	qglEnable(GL_VERTEX_PROGRAM_ARB);
-	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArray( 8 );
@@ -202,9 +198,9 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 
-		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
+		// this may cause RB_GLSL_DrawInteraction to be exacuted multiple
 		// times with different colors and images if the surface or light have multiple layers
-		RB_CreateSingleDrawInteractions( surf, RB_ARB2_DrawInteraction );
+		RB_CreateSingleDrawInteractions( surf, RB_GLSL_DrawInteraction );
 	}
 
 	qglDisableVertexAttribArray( 8 );
@@ -235,18 +231,19 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	backEnd.glState.currenttmu = -1;
 	GL_SelectTexture( 0 );
 
-	qglDisable(GL_VERTEX_PROGRAM_ARB);
-	qglDisable(GL_FRAGMENT_PROGRAM_ARB);
+// Unbind program
+//	renderProgManager.Unbind();
 }
 
 
 /*
 ==================
-RB_ARB2_DrawInteractions
+RB_GLSL_DrawInteractions
 ==================
 */
-void RB_ARB2_DrawInteractions( void ) {
-	viewLight_t		*vLight;
+void RB_GLSL_DrawInteractions( void ) {
+	viewLight_t			*vLight;
+	const idMaterial	*lightShader;
 
 	GL_SelectTexture( 0 );
 	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -291,17 +288,17 @@ void RB_ARB2_DrawInteractions( void ) {
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
 			RB_StencilShadowPass( vLight->globalShadows );
-			RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
+			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
 			RB_StencilShadowPass( vLight->localShadows );
-			RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
+			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
 			qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
 		} else {
 			RB_StencilShadowPass( vLight->globalShadows );
-			RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
+			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 			RB_StencilShadowPass( vLight->localShadows );
-			RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
+			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
 		}
 
 		// translucent surfaces never get stencil shadowed
@@ -312,7 +309,7 @@ void RB_ARB2_DrawInteractions( void ) {
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
 
 		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
-		RB_ARB2_CreateDrawInteractions( vLight->translucentInteractions );
+		RB_GLSL_CreateDrawInteractions( vLight->translucentInteractions );
 
 		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 	}
@@ -350,26 +347,29 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },
+//	{ GL_VERTEX_SHADER, 0, "tessDumb.vs" },
+	{ GL_TESS_EVALUATION_SHADER, 0, "tessEval.tes" },
+	{ GL_TESS_CONTROL_SHADER, 0, "tessControl.tcs" },
+
 	// additional programs can be dynamically specified in materials
 };
 
 /*
 =================
-R_LoadARBProgram
+R_LoadGLSLProgram
 =================
 */
-void R_LoadARBProgram( int progIndex ) {
-	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER || progs[progIndex].target == GL_VERTEX_SHADER) {
+void R_LoadGLSLProgram( int progIndex ) {
+	if ( progs[progIndex].target != GL_TESS_CONTROL_SHADER && progs[progIndex].target != GL_TESS_EVALUATION_SHADER && progs[progIndex].target != GL_VERTEX_SHADER ) {
 		return;
 	}
 
-	int		ofs;
-	int		err;
 	idStr	fullPath = "glprogs/";
 	fullPath += progs[progIndex].name;
 	char	*fileBuffer;
 	char	*buffer;
 	char	*start = NULL, *end;
+	GLuint	shader;
 
 	common->Printf( "%s", fullPath.c_str() );
 
@@ -390,69 +390,54 @@ void R_LoadARBProgram( int progIndex ) {
 		return;
 	}
 
+	// vertex and fragment programs can both be present in a single file, so
+	// scan for the proper header to be the start point, and stamp a 0 in after the end
+
+	if ( !glConfig.tesselationAvailable ) {
+		common->Printf( ": GL_ARB_tessellation_shader not available\n" );
+		return;
+	}
+
+	start = buffer;
+	end = strchr( start, '\0' );
+
 	//
 	// submit the program string at start to GL
 	//
 	if ( progs[progIndex].ident == 0 ) {
 		// allocate a new identifier for this program
-		progs[progIndex].ident = PROG_USER + progIndex;
+		progs[progIndex].ident = PROG_USER + glsl_prog;
 	}
 
-	// vertex and fragment programs can both be present in a single file, so
-	// scan for the proper header to be the start point, and stamp a 0 in after the end
-
-	if ( progs[progIndex].target == GL_VERTEX_PROGRAM_ARB ) {
-		if ( !glConfig.ARBVertexProgramAvailable ) {
-			common->Printf( ": GL_VERTEX_PROGRAM_ARB not available\n" );
-			return;
-		}
-		start = strstr( buffer, "!!ARBvp" );
-	}
-	if ( progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB ) {
-		if ( !glConfig.ARBFragmentProgramAvailable ) {
-			common->Printf( ": GL_FRAGMENT_PROGRAM_ARB not available\n" );
-			return;
-		}
-		start = strstr( buffer, "!!ARBfp" );
-	}
-
-	if ( !start ) {
-		common->Printf( ": !!ARB not found\n" );
+	if ((shader = qglCreateShader(progs[progIndex].target)) == 0)
+	{
+		common->Printf("Creating GLSL shader fail (%d)\n", qglGetError());
+		qglDeleteProgram(glsl_prog);
 		return;
 	}
 
-	end = strstr( start, "END" );
+	GLint status, length;
+	length = end - start;
 
-	if ( !end ) {
-		common->Printf( ": END not found\n" );
+	qglShaderSource(shader, 1, (const GLchar**)&start, (const GLint*)&length);
+	qglCompileShader(shader);
+
+	GLchar ErrorLog[1024];
+
+	qglGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+
+	if (status != GL_TRUE)
+	{
+		qglGetShaderInfoLog(shader, 1024, &length, ErrorLog);
+		common->Printf("Shader: %s\n", (const char*)ErrorLog);
+		qglDeleteShader(shader);
+		qglDeleteProgram(glsl_prog);
 		return;
 	}
-	end[3] = 0;
 
-	qglBindProgramARB( progs[progIndex].target, progs[progIndex].ident );
-	qglGetError();
+	qglAttachShader(glsl_prog, shader);
 
-	qglProgramStringARB( progs[progIndex].target, GL_PROGRAM_FORMAT_ASCII_ARB,
-		strlen( start ), start );
-
-	err = qglGetError();
-	qglGetIntegerv( GL_PROGRAM_ERROR_POSITION_ARB, (GLint *)&ofs );
-	if ( err == GL_INVALID_OPERATION ) {
-		const GLubyte *str = qglGetString( GL_PROGRAM_ERROR_STRING_ARB );
-		common->Printf( "\nGL_PROGRAM_ERROR_STRING_ARB: %s\n", str );
-		if ( ofs < 0 ) {
-			common->Printf( "GL_PROGRAM_ERROR_POSITION_ARB < 0 with error\n" );
-		} else if ( ofs >= (int)strlen( start ) ) {
-			common->Printf( "error at end of program\n" );
-		} else {
-			common->Printf( "error at %i:\n%s", ofs, start + ofs );
-		}
-		return;
-	}
-	if ( ofs != -1 ) {
-		common->Printf( "\nGL_PROGRAM_ERROR_POSITION_ARB != -1 without error\n" );
-		return;
-	}
+	qglDeleteShader(shader);
 
 	common->Printf( "\n" );
 }
@@ -465,11 +450,9 @@ Returns a GL identifier that can be bound to the given target, parsing
 a text file if it hasn't already been loaded.
 ==================
 */
-int R_FindARBProgram( GLenum target, const char *program ) {
+int R_FindGLSLProgram( GLenum target, const char *program ) {
 	int		i;
 	idStr	stripped = program;
-
-	common->Printf( "%s: %s\n", __func__, program );
 
 	stripped.StripFileExtension();
 
@@ -496,42 +479,56 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	progs[i].target = target;
 	strncpy( progs[i].name, program, sizeof( progs[i].name ) - 1 );
 
-	R_LoadARBProgram( i );
+	R_LoadGLSLProgram( i );
 
 	return progs[i].ident;
 }
 
 /*
 ==================
-R_ReloadARBPrograms_f
+R_ReloadGLSLPrograms_f
 ==================
 */
-void R_ReloadARBPrograms_f( const idCmdArgs &args ) {
-	int		i;
+void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
+	int i;
 
-	common->Printf( "----- R_ReloadARBPrograms -----\n" );
-	for ( i = 0 ; progs[i].name[0] ; i++ ) {
-		R_LoadARBProgram( i );
+	if ( (glsl_prog = qglCreateProgram()) == 0 ) {
+		common->Printf( "Creating shader program fail (%d)\n", qglGetError() );
+		return;
 	}
+
+	common->Printf( "----- R_ReloadGLSLPrograms -----\n" );
+	for ( i = 0; progs[i].name[0] ; i++ ) {
+		R_LoadGLSLProgram( i );
+	}
+
+	qglLinkProgram( glsl_prog );
+
+	GLint status;
+	GLchar ErrorLog[1024];
+	qglGetProgramiv( glsl_prog, GL_LINK_STATUS, &status );
+	if ( !status ) {
+		qglGetProgramInfoLog( glsl_prog, sizeof(ErrorLog), NULL, ErrorLog );
+		common->Printf( "Error linking shader program %d: '%s'\n", glsl_prog, ErrorLog );
+		return;
+	}
+
+	qglUseProgram( glsl_prog );
 }
 
 /*
 ==================
-R_ARB2_Init
+R_GLSL_Init
 
 ==================
 */
-void R_ARB2_Init( void ) {
-	glConfig.allowARB2Path = false;
+void R_GLSL_Init( void ) {
+	common->Printf( "GLSL renderer: " );
 
-	common->Printf( "ARB2 renderer: " );
-
-	if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
+	if ( !glConfig.allowGLSLPath) {
 		common->Printf( "Not available.\n" );
 		return;
 	}
 
 	common->Printf( "Available.\n" );
-
-	glConfig.allowARB2Path = true;
 }

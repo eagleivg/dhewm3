@@ -1675,6 +1675,10 @@ void	RB_STD_DrawView( void ) {
 	case BE_ARB2:
 		RB_ARB2_DrawInteractions();
 		break;
+	case BE_GLSL:
+		RB_GLSL_DrawInteractions();
+		break;
+
 	}
 
 	// disable stencil shadow test

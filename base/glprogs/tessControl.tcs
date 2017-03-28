@@ -1,0 +1,40 @@
+#version 410 core
+#define id gl_InvocationID
+
+layout(vertices = 3) out;
+
+// from vertex shader
+in VertexCS
+{
+        vec3 position;
+        vec2 texcoord;
+        vec3 normal;
+} vertcs[];
+
+// to evaluation shader
+out VertexES
+{
+        vec3 position;
+        vec2 texcoord;
+        vec3 normal;
+} vertes[];
+
+void main(void)
+{
+        vertes[id].position = vertcs[id].position;
+        vertes[id].texcoord = vertcs[id].texcoord;
+        vertes[id].normal = vertcs[id].normal;
+
+        const int inner = 64;
+        const int outer = 64;
+
+        if (0 == id) {
+                gl_TessLevelInner[0] = inner;
+                gl_TessLevelInner[1] = inner;
+                gl_TessLevelOuter[0] = outer;
+                gl_TessLevelOuter[1] = outer;
+                gl_TessLevelOuter[2] = outer;
+                gl_TessLevelOuter[3] = outer;
+        }
+        gl_out [id].gl_Position = gl_in[id].gl_Position;
+}

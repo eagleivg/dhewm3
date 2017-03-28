@@ -673,6 +673,7 @@ const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for gu
 
 typedef enum {
 	BE_ARB2,
+	BE_GLSL,
 	BE_VULKAN,
 	BE_BAD
 } backEndName_t;
@@ -1282,8 +1283,12 @@ DRAW_*
 void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
-void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
+
+void	R_GLSL_Init( void );
+void	RB_GLSL_DrawInteractions( void );
+void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
+int		R_FindGLSLProgram( GLenum target, const char *program );
 
 typedef enum {
 	PROG_INVALID,
