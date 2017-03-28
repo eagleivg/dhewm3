@@ -49,6 +49,7 @@ static void GL_SelectTextureNoClient( int unit ) {
 	qglActiveTexture( GL_TEXTURE0 + unit );
 }
 
+static GLuint glsl_prog = 0;
 /*
 ==================
 RB_ARB2_DrawInteraction
@@ -64,8 +65,10 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_FALLOFF_S, din->lightProjection[3].ToFloatPtr() );
 
 	if ( r_useTesselation.GetBool() ) {
-		qglUniformMatrix4fv( PP_BUMP_MATRIX_S, 1, GL_TRUE, din->bumpMatrix[0].ToFloatPtr() );
-		qglUniformMatrix4fv( PP_BUMP_MATRIX_T, 1, GL_TRUE, din->bumpMatrix[1].ToFloatPtr() );
+		GLint modelViewProjectionMatrixLocation = qglGetUniformLocation( glsl_prog, "modelViewProjectionMatrix" );
+		if ( modelViewProjectionMatrixLocation != -1 ) {
+			qglUniformMatrix4fv( modelViewProjectionMatrixLocation, 1, GL_TRUE, din->bumpMatrix[0].ToFloatPtr() );
+		}
 	} else {
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_S, din->bumpMatrix[0].ToFloatPtr() );
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_BUMP_MATRIX_T, din->bumpMatrix[1].ToFloatPtr() );
@@ -109,6 +112,12 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	// texture 1 will be the per-surface displacement map
 	GL_SelectTextureNoClient( 1 );
 	din->displacementImage->Bind();
+	if ( r_useTesselation.GetBool() ) {
+		GLint normalTextureLocation = -1;
+		if ( (normalTextureLocation = qglGetUniformLocation( glsl_prog, "heightmap" )) != -1 ) {
+			qglUniform1i( normalTextureLocation, 1 );
+		}
+	}
 
 	// texture 2 will be the light falloff texture
 	GL_SelectTextureNoClient( 2 );
@@ -341,6 +350,7 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },
+//	{ GL_VERTEX_SHADER, 0, "tessDumb.vs" },
 	{ GL_TESS_EVALUATION_SHADER, 0, "tessEval.tes" },
 	{ GL_TESS_CONTROL_SHADER, 0, "tessControl.tcs" },
 
@@ -353,7 +363,7 @@ R_LoadGLSLProgram
 =================
 */
 void R_LoadGLSLProgram( int progIndex ) {
-	if ( progs[progIndex].target != GL_TESS_CONTROL_SHADER && progs[progIndex].target != GL_TESS_EVALUATION_SHADER ) {
+	if ( progs[progIndex].target != GL_TESS_CONTROL_SHADER && progs[progIndex].target != GL_TESS_EVALUATION_SHADER && progs[progIndex].target != GL_VERTEX_SHADER ) {
 		return;
 	}
 
@@ -362,7 +372,7 @@ void R_LoadGLSLProgram( int progIndex ) {
 	char	*fileBuffer;
 	char	*buffer;
 	char	*start = NULL, *end;
-	GLuint	program, shader;
+	GLuint	shader;
 
 	common->Printf( "%s", fullPath.c_str() );
 
@@ -394,24 +404,18 @@ void R_LoadGLSLProgram( int progIndex ) {
 	start = buffer;
 	end = strchr( start, '\0' );
 
-	if ((program = qglCreateProgram()) == 0)
-	{
-		common->Printf("Creating shader program fail (%d)\n", qglGetError());
-		return;
-	}
-
 	//
 	// submit the program string at start to GL
 	//
 	if ( progs[progIndex].ident == 0 ) {
 		// allocate a new identifier for this program
-		progs[progIndex].ident = PROG_USER + program;
+		progs[progIndex].ident = PROG_USER + glsl_prog;
 	}
 
 	if ((shader = qglCreateShader(progs[progIndex].target)) == 0)
 	{
 		common->Printf("Creating GLSL shader fail (%d)\n", qglGetError());
-		qglDeleteProgram(program);
+		qglDeleteProgram(glsl_prog);
 		return;
 	}
 
@@ -430,29 +434,13 @@ void R_LoadGLSLProgram( int progIndex ) {
 		qglGetShaderInfoLog(shader, 1024, &length, ErrorLog);
 		common->Printf("Shader: %s\n", (const char*)ErrorLog);
 		qglDeleteShader(shader);
-		qglDeleteProgram(program);
+		qglDeleteProgram(glsl_prog);
 		return;
 	}
 
-	qglAttachShader(program, shader);
+	qglAttachShader(glsl_prog, shader);
 
 	qglDeleteShader(shader);
-
-	qglLinkProgram(program);
-
-	qglGetProgramiv( shader, GL_LINK_STATUS, &status );
-	if ( !status ) {
-		qglGetProgramInfoLog( shader, sizeof(ErrorLog), NULL, ErrorLog );
-		common->Printf( "Error linking shader program: '%s'\n", ErrorLog );
-		return;
-	}
-	qglUseProgram(program);
-	qglGetProgramiv( shader, GL_VALIDATE_STATUS, &status );
-	if ( !status ) {
-		qglGetProgramInfoLog( shader, sizeof(ErrorLog), NULL, ErrorLog );
-		common->Printf( "Invalid shader program: '%s'\n", ErrorLog );
-		return;
-	}
 
 	common->Printf( "\n" );
 }
@@ -463,7 +451,7 @@ R_LoadARBProgram
 =================
 */
 void R_LoadARBProgram( int progIndex ) {
-	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER ) {
+	if ( progs[progIndex].target == GL_TESS_CONTROL_SHADER || progs[progIndex].target == GL_TESS_EVALUATION_SHADER || progs[progIndex].target == GL_VERTEX_SHADER) {
 		return;
 	}
 
@@ -609,12 +597,32 @@ R_ReloadGLSLPrograms_f
 ==================
 */
 void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
-	int		i;
+	int i;
+
+	if ( (glsl_prog = qglCreateProgram()) == 0 ) {
+		common->Printf( "Creating shader program fail (%d)\n", qglGetError() );
+		return;
+	}
+	common->Printf( "Creating shader program (%u)\n", glsl_prog );
 
 	common->Printf( "----- R_ReloadGLSLPrograms -----\n" );
-	for ( i = 0 ; progs[i].name[0] ; i++ ) {
+	for ( i = 0; progs[i].name[0] ; i++ ) {
 		R_LoadGLSLProgram( i );
 	}
+
+	qglLinkProgram( glsl_prog );
+
+	GLint status;
+	GLchar ErrorLog[1024];
+	qglGetProgramiv( glsl_prog, GL_LINK_STATUS, &status );
+	if ( !status ) {
+		qglGetProgramInfoLog( glsl_prog, sizeof(ErrorLog), NULL, ErrorLog );
+		common->Printf( "Error linking shader program %d: '%s'\n", glsl_prog, ErrorLog );
+		return;
+	}
+
+	qglUseProgram( glsl_prog );
+
 }
 
 /*

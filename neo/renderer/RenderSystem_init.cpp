@@ -287,6 +287,8 @@ PFNGLDELETESHADERPROC					qglDeleteShader;
 // Tesselation
 PFNGLPATCHPARAMETERIPROC				qglPatchParameteri;
 PFNGLPATCHPARAMETERFVPROC				qglPatchParameterfv;
+PFNGLUNIFORM1IPROC						qglUniform1i;
+PFNGLGETUNIFORMLOCATIONPROC				qglGetUniformLocation;
 PFNGLUNIFORMMATRIX4FVPROC				qglUniformMatrix4fv;
 
 /*
@@ -461,7 +463,9 @@ static void R_CheckPortableExtensions( void ) {
 	if ( glConfig.tesselationAvailable ) {
 		qglPatchParameteri = (PFNGLPATCHPARAMETERIPROC)GLimp_ExtensionPointer( "glPatchParameteri" );
 		qglPatchParameterfv = (PFNGLPATCHPARAMETERFVPROC)GLimp_ExtensionPointer( "glPatchParameterfv" );
+		qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
 		qglUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GLimp_ExtensionPointer( "glUniformMatrix4fv" );
+		qglUniform1i = (PFNGLUNIFORM1IPROC)GLimp_ExtensionPointer( "glUniform1i" );
 
 		//GLSL
 		qglCreateProgram = (PFNGLCREATEPROGRAMPROC)GLimp_ExtensionPointer( "glCreateProgram" );

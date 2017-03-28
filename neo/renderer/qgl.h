@@ -74,17 +74,17 @@ extern	void ( APIENTRY * qglActiveTexture )( GLenum texture );
 extern	void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
 // ARB_vertex_buffer_object
-extern PFNGLBINDBUFFERPROC qglBindBuffer;
-extern PFNGLDELETEBUFFERSPROC qglDeleteBuffers;
-extern PFNGLGENBUFFERSPROC qglGenBuffers;
-extern PFNGLISBUFFERPROC qglIsBuffer;
-extern PFNGLBUFFERDATAPROC qglBufferData;
-extern PFNGLBUFFERSUBDATAPROC qglBufferSubData;
-extern PFNGLGETBUFFERSUBDATAPROC qglGetBufferSubData;
-extern PFNGLMAPBUFFERPROC qglMapBuffer;
-extern PFNGLUNMAPBUFFERPROC qglUnmapBuffer;
-extern PFNGLGETBUFFERPARAMETERIVPROC qglGetBufferParameteriv;
-extern PFNGLGETBUFFERPOINTERVPROC qglGetBufferPointerv;
+extern PFNGLBINDBUFFERPROC					qglBindBuffer;
+extern PFNGLDELETEBUFFERSPROC				qglDeleteBuffers;
+extern PFNGLGENBUFFERSPROC					qglGenBuffers;
+extern PFNGLISBUFFERPROC					qglIsBuffer;
+extern PFNGLBUFFERDATAPROC					qglBufferData;
+extern PFNGLBUFFERSUBDATAPROC				qglBufferSubData;
+extern PFNGLGETBUFFERSUBDATAPROC			qglGetBufferSubData;
+extern PFNGLMAPBUFFERPROC					qglMapBuffer;
+extern PFNGLUNMAPBUFFERPROC					qglUnmapBuffer;
+extern PFNGLGETBUFFERPARAMETERIVPROC		qglGetBufferParameteriv;
+extern PFNGLGETBUFFERPOINTERVPROC			qglGetBufferPointerv;
 
 // 3D textures
 extern void ( APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
@@ -93,15 +93,15 @@ extern void ( APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, G
 extern	void ( APIENTRY *qglColorTableEXT)( int, int, int, int, int, const void * );
 
 // EXT_stencil_two_side
-extern	PFNGLACTIVESTENCILFACEEXTPROC	qglActiveStencilFaceEXT;
+extern	PFNGLACTIVESTENCILFACEEXTPROC		qglActiveStencilFaceEXT;
 
 // ARB_texture_compression
 extern	PFNGLCOMPRESSEDTEXIMAGE2DARBPROC	qglCompressedTexImage2D;
 extern	PFNGLGETCOMPRESSEDTEXIMAGEARBPROC	qglGetCompressedTexImage;
 
 // ARB_vertex_program / ARB_fragment_program
-extern PFNGLVERTEXATTRIBPOINTERPROC		qglVertexAttribPointer;
-extern PFNGLENABLEVERTEXATTRIBARRAYPROC	qglEnableVertexAttribArray;
+extern PFNGLVERTEXATTRIBPOINTERPROC			qglVertexAttribPointer;
+extern PFNGLENABLEVERTEXATTRIBARRAYPROC		qglEnableVertexAttribArray;
 extern PFNGLDISABLEVERTEXATTRIBARRAYPROC	qglDisableVertexAttribArray;
 extern PFNGLPROGRAMSTRINGARBPROC			qglProgramStringARB;
 extern PFNGLBINDPROGRAMARBPROC				qglBindProgramARB;
@@ -130,6 +130,8 @@ extern PFNGLDELETESHADERPROC				qglDeleteShader;
 // Tesselation
 extern PFNGLPATCHPARAMETERIPROC				qglPatchParameteri;
 extern PFNGLPATCHPARAMETERFVPROC			qglPatchParameterfv;
+extern PFNGLUNIFORM1IPROC					qglUniform1i;
+extern PFNGLGETUNIFORMLOCATIONPROC			qglGetUniformLocation;
 extern PFNGLUNIFORMMATRIX4FVPROC			qglUniformMatrix4fv;
 
 #endif
